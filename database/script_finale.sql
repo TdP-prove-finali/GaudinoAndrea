@@ -1652,7 +1652,7 @@ CREATE TABLE `ratings` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `ratings` WRITE;
-insert into `ratings` values
+insert into `ratings` values 
 (1, 56, 4),
 (1, 50, 5),
 (2, 153, 2),
@@ -3766,19 +3766,16 @@ UNLOCK TABLES;
 -- Table structure for table `reservation`
 --
 
-
-
-
 DROP TABLE IF EXISTS `reservation`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `reservation` (
-  `Reservation_id` int NOT NULL,
+  `Reservation_id` int auto_increment,
   `Customer_id` int NOT NULL,
   `date` date NOT NULL,
   `offer_id` int default NULL,
   `trip_package_id` int NOT NULL,
-  PRIMARY KEY (`Reservation_id`,`Customer_id`,`offer_id`,`trip_package_id`),
+  PRIMARY KEY (`Reservation_id`,`Customer_id`,`trip_package_id`),
   CONSTRAINT `fk_Reservation_Customer1` FOREIGN KEY (`Customer_id`) REFERENCES `traveler` (`traveler_id`),
   CONSTRAINT `fk_Reservation_offer1` FOREIGN KEY (`offer_id`) REFERENCES `offer` (`offer_id`),
   CONSTRAINT `fk_Reservation_trip_package1` FOREIGN KEY (`trip_package_id`) REFERENCES `trip_package` (`trip_package_id`)
@@ -6420,7 +6417,7 @@ DROP TABLE IF EXISTS `traveler`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `traveler` (
-  `traveler_id` int NOT NULL,
+  `traveler_id` int auto_increment,
   `name` varchar(45) NOT NULL,
   `surname` varchar(45) NOT NULL,
   `age` int NOT NULL,
