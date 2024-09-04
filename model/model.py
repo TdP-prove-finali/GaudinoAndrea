@@ -19,3 +19,16 @@ class Model:
 
     def getTravelerID(self, mail):
         return DAO.getCustomerID(mail)[0]
+
+
+    def getUltimaDataP(self):
+        return DAO.getUltimaDataP()[0]
+
+    def getUltimaDataR(self):
+        return DAO.getUltimaDataR()[0]
+
+    def getStati(self):
+        return DAO.getAllStati()
+
+    def getCateCosto(self):
+        return DAO.getCateCosti()

@@ -78,3 +78,88 @@ class DAO():
         cursor.close()
         conn.close()
         return esito
+    @staticmethod
+    def getUltimaDataP():
+        conn = DBConnect.get_connection()
+
+        result = []
+
+        cursor = conn.cursor(dictionary=True)
+        query = """select tp.trip_start 
+                    from trip_package tp 
+                    order by tp.trip_start desc 
+                    limit 1
+                                            """
+
+        cursor.execute(query, ())
+
+        for row in cursor:
+            result.append(row['trip_start'])
+
+
+        cursor.close()
+        conn.close()
+        return result
+
+    @staticmethod
+    def getUltimaDataR():
+        conn = DBConnect.get_connection()
+
+        result = []
+
+        cursor = conn.cursor(dictionary=True)
+        query = """select tp.trip_end
+                        from trip_package tp 
+                        order by tp.trip_end desc 
+                        limit 1
+                                                """
+
+        cursor.execute(query, ())
+
+        for row in cursor:
+            result.append(row['trip_end'])
+
+        cursor.close()
+        conn.close()
+        return result
+
+    @staticmethod
+    def getAllStati():
+        conn = DBConnect.get_connection()
+
+        result = []
+
+        cursor = conn.cursor(dictionary=True)
+        query = """select distinct d.country 
+                    from destination d 
+                    order by country 
+                """
+
+        cursor.execute(query, ())
+
+        for row in cursor:
+            result.append(row['country'])
+
+        cursor.close()
+        conn.close()
+        return result
+
+    @staticmethod
+    def getCateCosti():
+        conn = DBConnect.get_connection()
+
+        result = []
+
+        cursor = conn.cursor(dictionary=True)
+        query = """select package_cost_category as cost
+                    from package_cost
+                        """
+
+        cursor.execute(query, ())
+
+        for row in cursor:
+            result.append(row['cost'])
+
+        cursor.close()
+        conn.close()
+        return result
