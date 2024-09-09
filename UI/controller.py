@@ -69,7 +69,19 @@ class Controller:
         statiDD = list(map(lambda x: ft.dropdown.Option(text=x), stati))
         self.view.ddStati.options = statiDD
         self.view.update_page()
+    def fillDDStatiCrea(self):
+        stati = self.model.getStati()
+        statiDD = list(map(lambda x: ft.dropdown.Option(text=x), stati))
+        self.view.ddCountry1.options = statiDD
+        self.view.ddCountry2.options = statiDD
+        self.view.ddCountry3.options = statiDD
+        self.view.update_page()
 
+    def fillDDLingue(self):
+        lingue = self.model.getLingue()
+        lingueDD = list(map(lambda x: ft.dropdown.Option(text=x[1], key=x[0]), lingue))
+        self.view.ddLingue.options = lingueDD
+        self.view.update_page()
     def fillDDCosto(self):
         categorieCosto = self.model.getCateCosto()
         categorieCostoDD = list(map(lambda x: ft.dropdown.Option(text=x, key=x.count("$")), categorieCosto))
@@ -368,4 +380,28 @@ class Controller:
 
         self.view.update_page()
 
+    def creaViaggio(self, e):
+        data = self.view.textDataP.value
+        stato1 = self.view.ddCountry1.value
+        stato2 = self.view.ddCountry2.value
+        stato3 = self.view.ddCountry3.value
+        numeroAttr = self.view.numeroAttrazioniMax.value
+        lingua = self.view.ddLingue.value
+        costo = self.view.ddCategoriaCostoCrea.value
 
+        if data == '':
+            self.view.create_alert('Data mancante!')
+            return
+        if stato1 is None:
+            self.view.create_alert('Stato 1 mancante!')
+            return
+        if numeroAttr == '':
+            self.view.create_alert('Numero massimo di attrazioni mancante!')
+            return
+        if lingua is None:
+            self.view.create_alert('Lingua visite guidate mancante!')
+            return
+        if costo is None:
+            self.view.create_alert('Costo accomodations mancante!')
+            return
+        self.model.creaViaggio(data, stato1, stato2, stato3, numeroAttr, lingua, costo)

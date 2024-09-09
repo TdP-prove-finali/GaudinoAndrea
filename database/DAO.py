@@ -1,6 +1,7 @@
 from database.DB_connect import DBConnect
 import mysql.connector
 
+from model.attraction import Attraction
 from model.destination import Destination
 from model.offer import Offer
 from model.tourist_attraction import Tourist_attraction
@@ -351,3 +352,77 @@ class DAO():
         cursor.close()
         conn.close()
         return esito
+
+    @staticmethod
+    def getLingue():
+
+        conn = DBConnect.get_connection()
+
+        result = []
+
+        cursor = conn.cursor(dictionary=True)
+        query = """select *
+                    from languages   
+                    order by name              
+                    """
+
+        cursor.execute(query, ())
+
+        for row in cursor:
+            result.append((row['languages_id'], row['name']))
+
+        cursor.close()
+        conn.close()
+        return result
+
+    @staticmethod
+    def getAllNodes(stato1, stato2, stato3):
+        conn = DBConnect.get_connection()
+
+        result = []
+
+        cursor = conn.cursor(dictionary=True)
+        query = """select ta.tourist_attraction_id as id, ta.cost as cost , d.country as country 
+from tourist_attraction ta , destination d 
+where ta.destination_id = d.destination_id 
+and (d.country =%s or d.country =%s or d.country =%s)           
+                            """
+
+        cursor.execute(query, (stato1, stato2, stato3))
+
+        for row in cursor:
+            result.append(Attraction(**row))
+
+        cursor.close()
+        conn.close()
+        return result
+
+
+    @staticmethod
+    def getAllEdges(stato1, stato2, stato3):
+        conn = DBConnect.get_connection()
+
+        result = []
+
+        cursor = conn.cursor(dictionary=True)
+        query = """select t1.tourist_attraction_id as at1, t1.cost as c1, t2.country as st1, t2.tourist_attraction_id as at2, t2.cost as c2, t1.country as st2
+from (select ta.tourist_attraction_id, ta.cost , d.country 
+			from tourist_attraction ta , destination d 
+			where ta.destination_id = d.destination_id 
+			and (d.country =%s or d.country =%s or d.country =%s)) t1,
+			(select ta.tourist_attraction_id, ta.cost , d.country 
+			from tourist_attraction ta , destination d 
+			where ta.destination_id = d.destination_id 
+			and (d.country =%s or d.country =%s or d.country =%s)) t2
+where t1.tourist_attraction_id < t2.tourist_attraction_id
+and t1.country = t2.country             
+                            """
+
+        cursor.execute(query, (stato1, stato2, stato3, stato1, stato2, stato3))
+
+        for row in cursor:
+            result.append((Attraction(row['at1'], row['c1'], row['st1']), Attraction(row['at2'], row['c2'], row['st2'])))
+
+        cursor.close()
+        conn.close()
+        return result

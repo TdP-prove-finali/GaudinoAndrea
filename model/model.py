@@ -1,4 +1,5 @@
 import datetime
+import networkx as nx
 
 import flet as ft
 
@@ -7,7 +8,7 @@ from database.DAO import DAO
 
 class Model:
     def __init__(self):
-        pass
+        self.grafo= nx.Graph()
 
     def getViaggiUtente(self, mail_utente):
         dizio = DAO.getViaggiUtente(mail_utente)
@@ -85,5 +86,13 @@ class Model:
         id = DAO.trovaCustomerID(email)[0]
         return DAO.prenota(trip_id, id, offerta, datetime.date.today())
 
+    def getLingue(self):
+        return DAO.getLingue()
 
+    def creaViaggio(self, data, stato1, stato2, stato3, numeroAttr, lingua, costo):
+        #DAO.getAllNodes(stato1, stato2, stato3)
+        self.grafo.add_nodes_from(DAO.getAllNodes(stato1, stato2, stato3))
+        #DAO.getAllEdges(stato1, stato2, stato3)
+        self.grafo.add_edges_from(DAO.getAllEdges(stato1, stato2, stato3))
+        mediaCosti
 
