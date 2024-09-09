@@ -13,12 +13,14 @@ class View:
 
 
 
+
     def load_interface(self):
         self.titolo = ft.Row([ft.Text("Agenzia viaggi VOYAGE", color='blue', size=28)], alignment=ft.MainAxisAlignment.CENTER )
         self.tabs = ft.Tabs(
             selected_index=0,
             tabs=[
                 ft.Tab(text="Prenota", content=self.content_prenota(),icon = ft.icons.EVENT),
+                ft.Tab(text="Crea"),
                 ft.Tab(text="Valuta", content=self.content_valuta(), icon=ft.icons.STAR),
 
             ],
@@ -37,31 +39,31 @@ class View:
         self.title_prenota = ft.Row([ft.Text("Prenota il tuo viaggio!!!", color='blue', size=24)], alignment=ft.MainAxisAlignment.CENTER)
 
         #Riga
-        dataPartenza = ft.ElevatedButton(text='Scegli data', on_click= lambda e: self.page.open(
-            ft.DatePicker(first_date=datetime.datetime.today(), last_date=self.controller.getUltimaDataPartenza(), on_change=self.riempiDataPartenza),))
-        self.textDataPartenza = ft.TextField(label="Data partenza", border_color='red', border_width=2, width=200, read_only=True)
-        self.dataRitorno = ft.ElevatedButton(text="Scegli data", disabled=True, on_click= lambda e: self.page.open(
-            ft.DatePicker(first_date=datetime.datetime.strptime(self.textDataPartenza.value, "%d-%m-%Y")+datetime.timedelta(days=1), last_date=self.controller.getUltimaDataRitorno(), on_change=self.riempiDataRitorno),
-        ))
-        self.textDataRitorno = ft.TextField(label="Data ritorno", width=200, read_only=True)
-        self.dateFlessibili = ft.Checkbox(label="Date flessibili")
-        rowDatiInput = ft.Row(controls=[self.textDataPartenza, dataPartenza, self.textDataRitorno, self.dataRitorno, self.dateFlessibili], alignment=ft.MainAxisAlignment.CENTER)
+        self.mesePartenza = ft.Dropdown(label="Mese partenza", width=200)
+        self.controller.fillDDMese()
+        self.annoPartenza = ft.Dropdown(label="Anno partenza", width=200, options=[
+                                ft.dropdown.Option(text="2024"),
+                                ft.dropdown.Option(text="2025")
+        ])
+        #rowDatiInput = ft.Row(controls=[dataPartenza,self.textDataPartenza,  self.durataViaggio], alignment=ft.MainAxisAlignment.CENTER)
 
-        self.ddStati = ft.Dropdown(label="Destinazione")
+        self.ddStati = ft.Dropdown(label="Destinazione", width=250)
         self.controller.fillDDStati()
-        self.piuStati = ft.Checkbox(label="Viaggio multi-stato")
-        self.ddCategoriaCosto = ft.Dropdown(label="Costo")
+        #self.piuStati = ft.Checkbox(label="Viaggio multi-stato")
+        self.ddCategoriaCosto = ft.Dropdown(label="Costo", width=200)
         self.controller.fillDDCosto()
 
-        rowDatiInput2 = ft.Row(controls=[self.ddStati, self.piuStati, self.ddCategoriaCosto, ft.ElevatedButton(text="Invia dati", on_click=self.controller.inviaDati)], alignment=ft.MainAxisAlignment.CENTER)
+        rowDatiInput = ft.Row(controls=[self.mesePartenza, self.annoPartenza, self.ddStati, self.ddCategoriaCosto, ft.ElevatedButton(text="Ricerca viaggi", on_click=self.controller.ricercaViaggi)], alignment=ft.MainAxisAlignment.CENTER)
 
-        self.rowOrdinamento = ft.Row(controls=[ft.Text("Ordina i parametri per importanza", size=18, color='blue')], alignment=ft.MainAxisAlignment.CENTER)
-        self.colonnaDraggable = ft.Column()
-        self.colonnaTarget = ft.Column()
-        btnInviaDati = ft.ElevatedButton(text="Ricerca viaggi", on_click=self.controller.ricercaViaggi)
-        self.rowOrdinamento.controls = [self.colonnaDraggable, ft.Container(width=200) , self.colonnaTarget, btnInviaDati]
+        # self.rowOrdinamento = ft.Row(controls=[ft.Text("Ordina i parametri per importanza", size=18, color='blue')], alignment=ft.MainAxisAlignment.CENTER)
+        # self.colonnaDraggable = ft.Column()
+        # self.colonnaTarget = ft.Column()
+        # btnRicercaViaggi = ft.ElevatedButton(text="Ricerca viaggi", on_click=self.controller.ricercaViaggi)
+        # self.rowOrdinamento.controls = [self.colonnaDraggable, ft.Container(width=200) , self.colonnaTarget, btnRicercaViaggi]
 
-        self.contentPrenota.controls = [self.title_prenota, rowDatiInput, rowDatiInput2]
+        self.colViaggi = ft.Column(alignment=ft.MainAxisAlignment.CENTER, auto_scroll=True)
+
+        self.contentPrenota.controls = [ft.Container(height=4), self.title_prenota, rowDatiInput, ft.Divider(height=1, thickness=2, color="blue"), self.colViaggi]
         return self.contentPrenota
 
     def content_valuta(self):
@@ -93,24 +95,6 @@ class View:
 
 
 
-    def riempiDataPartenza(self, e):
-        data =  e.data
-        data_ora = datetime.datetime.strptime(data, "%Y-%m-%dT%H:%M:%S.%f")
-        data_formattata = data_ora.strftime("%d-%m-%Y")
-        self.textDataPartenza.value = data_formattata
-        self.dataRitorno.disabled = False
-        self.update_page()
-
-
-    def riempiDataRitorno(self, e):
-        data = e.data
-        data_ora = datetime.datetime.strptime(data, "%Y-%m-%dT%H:%M:%S.%f")
-        data_formattata = data_ora.strftime("%d-%m-%Y")
-        self.textDataRitorno.value = data_formattata
-        self.update_page()
-
-
-
 
 
     def set_controller(self, controller):
@@ -124,3 +108,4 @@ class View:
 
     def update_page(self):
         self.page.update()
+
