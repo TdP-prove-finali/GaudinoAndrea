@@ -23,11 +23,7 @@ class Model:
         return DAO.getCustomerID(mail)[0]
 
 
-    def getUltimaDataP(self):
-        return DAO.getUltimaDataP()[0]
 
-    def getUltimaDataR(self):
-        return DAO.getUltimaDataR()[0]
 
     def getStati(self):
         return DAO.getAllStati()
@@ -66,10 +62,28 @@ class Model:
 
 
     def autoCompila(self, email):
-        return DAO.getInfoTraveler(email)[0]
+        return DAO.getInfoTraveler(email)
 
 
 
+    def aggiornaTraveler(self, name, surname, age, address, phone, email, gender):
+        if gender == 'other':
+            return DAO.aggiornaTraveler(name, surname, age, address, phone, email, None)
+        else:
+            return DAO.aggiornaTraveler(name, surname, age, address, phone, email, gender)
+
+
+
+
+    def reservation(self, trip_id, email, offerta, name, surname, age, address, phone, gender):
+        customerId = DAO.trovaCustomerID(email)
+        if customerId:
+            id = customerId[0]
+        else:
+            if not DAO.registraNuovoCliente(name, surname, age, address, phone, email, gender):
+                return False
+        id = DAO.trovaCustomerID(email)[0]
+        return DAO.prenota(trip_id, id, offerta, datetime.date.today())
 
 
 

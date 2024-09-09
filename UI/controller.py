@@ -1,6 +1,9 @@
 import flet as ft
 import datetime
 
+from model.traveler import Traveler
+
+
 class Controller:
     def __init__(self, view, model):
         self.view = view
@@ -9,6 +12,7 @@ class Controller:
         self.mail_utente = None
         self.tabPrenota = None
         self.creaTab()
+        self.traveler = None
 
         # self.listaDraggable = []
         # self.listaTarget = []
@@ -251,6 +255,8 @@ class Controller:
 
     def prenota(self, viaggio):
         self.view.tabs.tabs.append(self.tabPrenota)
+        self.view.tabs.selected_index = len(self.view.tabs.tabs) -1
+        self.tripScelto = viaggio
         self.view.update_page()
 
     def creaTab(self):
@@ -260,28 +266,38 @@ class Controller:
 
 
     def autoCompila(self, email):
-        if email.value is None:
+        if email.value is None or email.value == "":
             self.view.create_alert("Email non inserita")
             return
-        self.traveler = self.model.autoCompila(email)
-        self.view.name.value = self.traveler.name
-        self.view.surname.value = self.traveler.surname
-        self.view.age.value = self.traveler.age
-        self.view.address.value = self.traveler.address
-        self.view.phone.value = self.traveler.phone
+        campoTraveler = self.model.autoCompila(email.value)
+        if len(campoTraveler) > 0:
+            self.traveler = campoTraveler[0]
+        else:
+            self.view.create_alert("Email non presente nel database, compilare a mano")
+            return
+        self.name.value = self.traveler.name
+        self.surname.value = self.traveler.surname
+        self.age.value = self.traveler.age
+        self.address.value = self.traveler.address
+        self.phone.value = self.traveler.phone
+        self.gender.value = self.traveler.gender
+        self.view.update_page()
 
 
 
     def creaContenutoTab(self):
         # Campo email con bottone Auto-compila in una riga
-        email = ft.TextField(label="Email", width=300)
-        btnAutoCompila = ft.ElevatedButton(text="Auto-compila", on_click=lambda e: self.autoCompila(email))
-        emailRow = ft.Row(controls=[email, btnAutoCompila], alignment=ft.MainAxisAlignment.CENTER)
+        self.email = ft.TextField(label="Email", width=300)
+        btnAutoCompila = ft.ElevatedButton(text="Auto-compila", on_click=lambda e: self.autoCompila(self.email))
+        emailRow = ft.Row(controls=[self.email], alignment=ft.MainAxisAlignment.CENTER)
+        autoCompilaRow = ft.Row(controls=[ft.Text("Se hai già prenotato viaggi clicca su \"Auto-compila\" per l'autocompletamento dei dati", color='blue' , size=15) ,btnAutoCompila],
+                                alignment=ft.MainAxisAlignment.CENTER)
 
         # Altri campi di input (Nome, Cognome, Età, etc.)
         self.name = ft.TextField(label="Nome", width=200)
         self.surname = ft.TextField(label="Cognome", width=200)
         self.age = ft.TextField(label="Età", width=100)
+        self.studente = ft.Checkbox(label='Studente')
         self.address = ft.TextField(label="Indirizzo", width=400)
         self.phone = ft.TextField(label="Telefono", width=200)
 
@@ -289,28 +305,67 @@ class Controller:
         self.gender = ft.Dropdown(
             label="Genere",
             options=[
-                ft.dropdown.Option(text='Uomo', key='Male'),
-                ft.dropdown.Option(text='Donna', key='Female'),
-                ft.dropdown.Option(text='Altro', key='Other')  # Usa 'Other' come chiave
+                ft.dropdown.Option(text='Uomo', key='male'),
+                ft.dropdown.Option(text='Donna', key='female'),
+                ft.dropdown.Option(text='Altro', key='other')
             ],
             width=200
         )
 
         # Organizzazione dei campi input in righe
-        row1 = ft.Row(controls=[self.name, self.surname])
-        row2 = ft.Row(controls=[self.age, self.phone])
-        row3 = ft.Row(controls=[self.address])
-        row4 = ft.Row(controls=[self.gender])
+        row1 = ft.Row(controls=[self.name, self.surname], alignment=ft.MainAxisAlignment.CENTER)
+        row2 = ft.Row(controls=[self.age, self.studente], alignment=ft.MainAxisAlignment.CENTER)
+        row3 = ft.Row(controls=[self.address, self.phone], alignment=ft.MainAxisAlignment.CENTER)
+        row4 = ft.Row(controls=[self.gender], alignment=ft.MainAxisAlignment.CENTER)
+        row5 = ft.Row(controls=[ft.ElevatedButton(text="Prenota", on_click=self.prenotaViaggio)], alignment=ft.MainAxisAlignment.CENTER)
 
         # Creazione della colonna che contiene tutte le righe
         colInput = ft.Column(
-            controls=[ft.Container(height=4), emailRow, row1, row2, row3, row4],
-            alignment=ft.MainAxisAlignment.CENTER,
+            controls=[ft.Container(height=4), emailRow, autoCompilaRow, row1, row2, row3, row4, row5],
+            alignment=ft.MainAxisAlignment.START,
             spacing=20  # Aggiungi spazio tra le righe per evitare sovrapposizioni
         )
 
         return colInput
 
 
+
+
+    def prenotaViaggio(self, e):
+        utentePrenotante = Traveler(self.name.value, self.surname.value, int(self.age.value), self.address.value, self.phone.value, self.email.value, self.gender.value)
+        if self.traveler != utentePrenotante:
+            if not self.model.aggiornaTraveler(self.name.value, self.surname.value, int(self.age.value), self.address.value, self.phone.value, self.email.value, self.gender.value):
+                self.view.create_alert("Errore nell'inserimento dei dati")
+                return
+        offerte = self.model.cercaOfferteViaggio(self.tripScelto.trip_package_id, datetime.date.today())
+        bestOfferta = None
+        if len(offerte)>0:
+            offerte.sort(key = lambda x: x.cost)
+            if offerte[0].offer_info_category == 'student' and self.studente:
+                bestOfferta = offerte[0].offer_id
+            elif offerte[0].offer_info_category == 'student' and not self.studente:
+                bestOfferta = offerte[1].offer_id
+            else:
+                bestOfferta = offerte[0].offer_id
+        self.dlgPrenotazione = ft.AlertDialog(actions=[ft.TextButton("Chiudi", on_click= self.chiudi_dialog_prenotazione)])
+
+        if self.model.reservation(self.tripScelto.trip_package_id, self.email.value, bestOfferta, self.name.value, self.surname.value, int(self.age.value), self.address.value, self.phone.value, self.gender.value):
+            self.dlgPrenotazione.content = ft.Text("Prenotazione avvenuta correttamente!!")
+            self.view.page.dialog = self.dlgPrenotazione
+            self.dlgPrenotazione.open = True
+            self.view.update_page()
+        else:
+            self.dlgPrenotazione.content = ft.Text("Prenotazione non riuscita!!")
+            self.view.page.dialog = self.dlgPrenotazione
+            self.dlgPrenotazione.open = True
+            self.view.update_page()
+
+
+    def chiudi_dialog_prenotazione(self, e):
+        self.dlgPrenotazione.open = False
+        self.view.tabs.selected_index = 0
+        self.view.tabs.tabs.pop()
+
+        self.view.update_page()
 
 

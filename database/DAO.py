@@ -86,50 +86,7 @@ class DAO():
         cursor.close()
         conn.close()
         return esito
-    @staticmethod
-    def getUltimaDataP():
-        conn = DBConnect.get_connection()
 
-        result = []
-
-        cursor = conn.cursor(dictionary=True)
-        query = """select tp.trip_start 
-                    from trip_package tp 
-                    order by tp.trip_start desc 
-                    limit 1
-                                            """
-
-        cursor.execute(query, ())
-
-        for row in cursor:
-            result.append(row['trip_start'])
-
-
-        cursor.close()
-        conn.close()
-        return result
-
-    @staticmethod
-    def getUltimaDataR():
-        conn = DBConnect.get_connection()
-
-        result = []
-
-        cursor = conn.cursor(dictionary=True)
-        query = """select tp.trip_end
-                        from trip_package tp 
-                        order by tp.trip_end desc 
-                        limit 1
-                                                """
-
-        cursor.execute(query, ())
-
-        for row in cursor:
-            result.append(row['trip_end'])
-
-        cursor.close()
-        conn.close()
-        return result
 
     @staticmethod
     def getAllStati():
@@ -180,14 +137,13 @@ class DAO():
         result = []
 
         cursor = conn.cursor(dictionary=True)
-        query = """select tp.*
+        query = """select distinctrow tp.*
                     from trip_package tp, trip_package_has_destination th, destination d
                     where month(tp.trip_start) = %s
                     and year(tp.trip_start) = %s
                     and th.trip_package_id = tp.trip_package_id
                     and th.destination_id = d.destination_id
                     and d.country = %s
-                    group by tp.trip_package_id
                                 """
 
         cursor.execute(query, (mese, anno, destinazione))
@@ -313,3 +269,85 @@ class DAO():
         cursor.close()
         conn.close()
         return result
+
+    @staticmethod
+    def aggiornaTraveler(name, surname, age, address, phone, email, gender):
+        conn = DBConnect.get_connection()
+
+        esito = None
+
+        cursor = conn.cursor(dictionary=True)
+        query = """update traveler
+                    set name = %s, surname = %s, age = %s, address = %s, phone = %s, gender = %s
+                    where email = %s
+                                                    """
+        try:
+            cursor.execute(query, (name, surname, age, address, phone, gender, email))
+            conn.commit()
+            esito = True
+        except mysql.connector.Error as err:
+            esito = False
+        cursor.close()
+        conn.close()
+        return esito
+    @staticmethod
+    def trovaCustomerID(email):
+        conn = DBConnect.get_connection()
+
+        result = []
+
+        cursor = conn.cursor(dictionary=True)
+        query = """select traveler_id as id
+                    from traveler
+                    where email = %s                 
+                    """
+
+        cursor.execute(query, (email,))
+
+        for row in cursor:
+            result.append(row['id'])
+
+        cursor.close()
+        conn.close()
+        return result
+
+
+    @staticmethod
+    def registraNuovoCliente(name, surname, age, address, phone, email, gender):
+        conn = DBConnect.get_connection()
+
+        esito = None
+
+        cursor = conn.cursor(dictionary=True)
+        query = """insert into traveler(name, surname, age, address, phone, email, gender) values
+                    (%s, %s,%s,%s,%s,%s,%s)
+                                                            """
+        try:
+            cursor.execute(query, (name, surname, age, address, phone, email, gender))
+            conn.commit()
+            esito = True
+        except mysql.connector.Error as err:
+            esito = False
+        cursor.close()
+        conn.close()
+        return esito
+
+    @staticmethod
+    def prenota(trip_id, traveler_id, offerta, data):
+        conn = DBConnect.get_connection()
+
+        esito = None
+
+        cursor = conn.cursor(dictionary=True)
+        query = """insert into reservation(Customer_id, date, offer_id, trip_package_id) values
+                            (%s, %s,%s,%s)
+                                                                    """
+        try:
+            cursor.execute(query, (traveler_id, data, offerta, trip_id))
+            conn.commit()
+            esito = True
+        except mysql.connector.Error as err:
+            esito = False
+        cursor.close()
+        conn.close()
+        return esito
