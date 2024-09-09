@@ -414,8 +414,7 @@ from (select ta.tourist_attraction_id, ta.cost , d.country
 			from tourist_attraction ta , destination d 
 			where ta.destination_id = d.destination_id 
 			and (d.country =%s or d.country =%s or d.country =%s)) t2
-where t1.tourist_attraction_id < t2.tourist_attraction_id
-and t1.country = t2.country             
+where t1.tourist_attraction_id < t2.tourist_attraction_id          
                             """
 
         cursor.execute(query, (stato1, stato2, stato3, stato1, stato2, stato3))
@@ -426,3 +425,28 @@ and t1.country = t2.country
         cursor.close()
         conn.close()
         return result
+
+
+    @staticmethod
+    def getMediaCosti():
+        conn = DBConnect.get_connection()
+
+        result = []
+
+        cursor = conn.cursor(dictionary=True)
+        query = """select round( avg(round(tp.cost_attraction / t1.c, 1 )), 1)  as c
+from trip_package tp , 
+						(select tpha.trip_package_id, count(tpha.tourist_attraction_id) as c
+						from trip_package_has_attraction tpha
+						group by tpha.trip_package_id) t1
+where tp.trip_package_id = t1.trip_package_id            
+                                    """
+
+        cursor.execute(query, ())
+
+        for row in cursor:
+            result.append(row['c'])
+
+        cursor.close()
+        conn.close()
+        return result[0]

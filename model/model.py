@@ -94,5 +94,16 @@ class Model:
         self.grafo.add_nodes_from(DAO.getAllNodes(stato1, stato2, stato3))
         #DAO.getAllEdges(stato1, stato2, stato3)
         self.grafo.add_edges_from(DAO.getAllEdges(stato1, stato2, stato3))
-        mediaCosti
+        mediaCosti = DAO.getMediaCosti()
+        self.solBest = None
+
+
+        for i in list(self.grafo.nodes):
+            parziale = [i]
+            self.ricorsione(parziale, mediaCosti, numeroAttr)
+
+
+
+    def ricorsione(self, parziale, mediaCosti, numeroAttr):
+        vicini = self.grafo.neighbors(parziale[-1])
 
