@@ -44,7 +44,7 @@ class Controller:
 
         self.view.update_page()
 
-    def valutaViaggio(self, e):
+    def valutaViaggio(self, listaP):
         try:
             trip_id = int(self.view.ddViaggi.value)
             voto = int(self.view.ddVoti.value)
@@ -52,8 +52,10 @@ class Controller:
             if not self.model.valutaViaggio(trip_id, voto, self.mail_utente):
                 self.view.create_alert("Viaggio già valutato!")
             else:
-                rigaRisultato = ft.Row(controls=[ft.Text("Valutazione registrata correttamente", color="blue", size=16)], alignment=ft.MainAxisAlignment.CENTER)
-                self.view.contentValuta.controls.append(rigaRisultato)
+                self.rigaRisultato = ft.Row(controls=[ft.Text("Valutazione registrata correttamente", color="blue", size=16)], alignment=ft.MainAxisAlignment.CENTER)
+                self.view.contentValuta.controls.append(self.rigaRisultato)
+                listaP.append(self.rigaRisultato)
+                self.svuotaParametri(listaP)
         except TypeError:
             self.view.create_alert("Viaggio o valutazione non selezionati!!")
         self.view.update_page()
@@ -173,7 +175,11 @@ class Controller:
         destinazionePrimaria = self.view.ddStati.value
         costo = self.view.ddCategoriaCosto.value
 
-        if mese is None or anno is None or destinazionePrimaria is None or costo is None:
+
+
+
+        if mese is None or anno is None or destinazionePrimaria is None or costo is None\
+                or mese=="" or anno == '' or destinazionePrimaria == '' or costo == '':
             self.view.create_alert("Parametri mancanti!!")
             return
 
@@ -191,6 +197,10 @@ class Controller:
             lista_viaggi.sort(key=lambda x: x.package_cost_category_id)
 
         self.view.colViaggi.controls.clear()
+        self.view.rowVaiACrea.controls.clear()
+        self.view.update_page()
+        self.view.contentPrenota.controls.append(self.view.rowVaiACrea)
+
         for v in lista_viaggi:
             offerte = self.model.cercaOfferteViaggio(v.trip_package_id, datetime.date.today())
 
@@ -220,7 +230,7 @@ class Controller:
 
             btnDettagli = ft.ElevatedButton(text="Dettagli viaggio", on_click=lambda e: self.dettagliViaggio(dizio_viaggi[v][0], dizio_viaggi[v][1], dizio_viaggi[v][2]))
 
-            btnPrenota = ft.ElevatedButton(text="Prenota viaggio", on_click=lambda e: self.prenota(v))
+            btnPrenota = ft.ElevatedButton(text="Prenota viaggio", on_click=lambda e: self.prenota(v, [self.view.mesePartenza, self.view.annoPartenza, self.view.ddStati, self.view.ddCategoriaCosto, self.view.colViaggi]))
 
             # Imposta il contenuto del contenitore e aggiungi alla colonna
             row.controls = [rowDestinazioni, rowCosto, rowPartenza, btnDettagli, btnPrenota]
@@ -265,16 +275,16 @@ class Controller:
         self.dlg.open = False
         self.view.update_page()
 
-    def prenota(self, viaggio):
+    def prenota(self, viaggio, listaP):
         self.view.tabs.tabs.append(self.tabPrenota)
         self.view.tabs.selected_index = len(self.view.tabs.tabs) -1
         self.tripScelto = viaggio
+        self.svuotaParametri(listaP)
         self.view.update_page()
 
     def creaTab(self):
         self.tabPrenota = ft.Tab(text="Inserisci dati", content=self.creaContenutoTab())
-        # Assegna la colonna come contenuto della tab
-        #self.tabPrenota.content = colInput
+
 
 
     def autoCompila(self, email):
@@ -329,7 +339,7 @@ class Controller:
         row2 = ft.Row(controls=[self.age, self.studente], alignment=ft.MainAxisAlignment.CENTER)
         row3 = ft.Row(controls=[self.address, self.phone], alignment=ft.MainAxisAlignment.CENTER)
         row4 = ft.Row(controls=[self.gender], alignment=ft.MainAxisAlignment.CENTER)
-        row5 = ft.Row(controls=[ft.ElevatedButton(text="Prenota", on_click=self.prenotaViaggio)], alignment=ft.MainAxisAlignment.CENTER)
+        row5 = ft.Row(controls=[ft.ElevatedButton(text="Prenota", on_click=lambda e:self.prenotaViaggio([self.email, self.name, self.surname, self.phone, self.address, self.age, self.gender]))], alignment=ft.MainAxisAlignment.CENTER)
 
         # Creazione della colonna che contiene tutte le righe
         colInput = ft.Column(
@@ -343,12 +353,15 @@ class Controller:
 
 
 
-    def prenotaViaggio(self, e):
+    def prenotaViaggio(self, listaParametri):
         utentePrenotante = Traveler(self.name.value, self.surname.value, int(self.age.value), self.address.value, self.phone.value, self.email.value, self.gender.value)
-        if self.traveler != utentePrenotante:
-            if not self.model.aggiornaTraveler(self.name.value, self.surname.value, int(self.age.value), self.address.value, self.phone.value, self.email.value, self.gender.value):
-                self.view.create_alert("Errore nell'inserimento dei dati")
-                return
+
+        travelerRicercato = self.model.autoCompila(utentePrenotante.email)
+        if not travelerRicercato:
+            self.model.aggiungiTraveler(self.name.value, self.surname.value, int(self.age.value), self.address.value,
+                                       self.phone.value, self.email.value, self.gender.value)
+
+
         offerte = self.model.cercaOfferteViaggio(self.tripScelto.trip_package_id, datetime.date.today())
         bestOfferta = None
         if len(offerte)>0:
@@ -365,12 +378,14 @@ class Controller:
             self.dlgPrenotazione.content = ft.Text("Prenotazione avvenuta correttamente!!")
             self.view.page.dialog = self.dlgPrenotazione
             self.dlgPrenotazione.open = True
+            self.svuotaParametri(listaParametri)
             self.view.update_page()
         else:
             self.dlgPrenotazione.content = ft.Text("Prenotazione non riuscita!!")
             self.view.page.dialog = self.dlgPrenotazione
             self.dlgPrenotazione.open = True
             self.view.update_page()
+
 
 
     def chiudi_dialog_prenotazione(self, e):
@@ -387,7 +402,7 @@ class Controller:
         stato3 = self.view.ddCountry3.value
         numeroAttr = self.view.numeroAttrazioniMax.value
         lingua = self.view.ddLingue.value
-        costo = self.view.ddCategoriaCostoCrea.value
+        costoAccomodation = self.view.ddCategoriaCostoCrea.value
 
         if data == '':
             self.view.create_alert('Data mancante!')
@@ -401,7 +416,83 @@ class Controller:
         if lingua is None:
             self.view.create_alert('Lingua visite guidate mancante!')
             return
-        if costo is None:
+        if costoAccomodation is None or costoAccomodation == '':
             self.view.create_alert('Costo accomodations mancante!')
             return
-        self.model.creaViaggio(data, stato1, stato2, stato3, numeroAttr, lingua, costo)
+        costoAccomodation = int(costoAccomodation)*300
+
+        solBest, costo = self.model.creaViaggio(stato1, stato2, stato3, numeroAttr)
+        self.view.colRisultati.controls.clear()
+        self.view.update_page()
+        destinazioni = list(set(x.nameDest for x in solBest))
+        strDestinazioni = ", ".join(destinazioni)
+        # attrazioni = [x.nameAtt for x in solBest]
+        container = ft.Container(border=ft.border.all(2, "blue"))
+
+        content = ft.Column()
+        # Prima riga centrata
+        content.controls.append(ft.Row(
+            controls=[
+                ft.Text("Costo attrazioni: ", weight=ft.FontWeight.BOLD),
+                ft.Text(str(costo) + "€"),
+                ft.Text("Costo accomodations: ", weight=ft.FontWeight.BOLD),
+                ft.Text(str(costoAccomodation) + "€"),
+                ft.Text("Destinazioni: ", weight=ft.FontWeight.BOLD),
+                ft.Text(strDestinazioni)
+            ], alignment=ft.MainAxisAlignment.CENTER))
+
+        # Creazione della colonna per le attrazioni
+        colAttraction = ft.Column()
+        listaCheckbox = []
+        for i in solBest:
+            checkBox = ft.Checkbox(label="Visita guidata")
+            listaCheckbox.append(checkBox)
+            # Righe centrate anche per le attrazioni
+            colAttraction.controls.append(ft.Row(
+                controls=[ft.Text(i.nameAtt), checkBox], alignment=ft.MainAxisAlignment.CENTER))
+
+        # Aggiunta della colonna delle attrazioni alla riga centrata
+        content.controls.append(ft.Row(
+            controls=[colAttraction], alignment=ft.MainAxisAlignment.CENTER))
+
+        # Aggiunta del pulsante "Prenota" con riga centrata
+        content.controls.append(ft.Row(
+            controls=[ft.ElevatedButton(text='Prenota',
+                                        on_click=lambda e: self.prenotaViaggioCreato(listaCheckbox, solBest, lingua, costoAccomodation, data))],
+            alignment=ft.MainAxisAlignment.CENTER))
+
+        # Aggiunta del container alla view
+        container.content = content
+        self.view.contentCrea.controls.append(container)
+
+        self.view.update_page()
+
+
+    def prenotaViaggioCreato(self, listaCheckbox, solBest, lingua, costoAccomodation, data):
+        dizioAttrazioni = {}
+        costoAttraction = 0
+        for i, attr in enumerate(solBest):
+            if listaCheckbox[i].value is True:
+                resultGuida = self.model.getGuidaLingua(int(lingua))
+                costoAttraction += attr.cost * (1+round(int(resultGuida[1]), 2))
+            else:
+                costoAttraction += attr.cost
+        campiData = data.split("-")
+        nuovaData = datetime.date(int(campiData[2]), int(campiData[1]), int(campiData[0]))
+        id = self.model.creaTripPackage(nuovaData, costoAttraction, costoAccomodation, int(costoAccomodation/300))
+        if id is None:
+            self.view.create_alert('Inserimento nuovo trip package fallito!!')
+            return
+        self.prenota(id)
+
+
+    def svuotaParametri(self, listaParametri):
+        for p in listaParametri:
+            if isinstance(p, ft.Dropdown):
+                p.value = None
+            elif isinstance(p, ft.Text) or isinstance(p, ft.TextField):
+                p.value = ''
+            elif isinstance(p, ft.Column) or isinstance(p, ft.Row):
+                p.controls.clear()
+        self.view.update_page()
+

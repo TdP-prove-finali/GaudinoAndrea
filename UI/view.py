@@ -1,3 +1,4 @@
+import copy
 import datetime
 
 import flet as ft
@@ -8,7 +9,7 @@ class View:
         super().__init__()
         self.page = page
         self.controller = None
-
+        self.page.scroll = 'adaptive'
 
 
 
@@ -62,6 +63,8 @@ class View:
         # self.rowOrdinamento.controls = [self.colonnaDraggable, ft.Container(width=200) , self.colonnaTarget, btnRicercaViaggi]
 
         self.colViaggi = ft.Column(alignment=ft.MainAxisAlignment.CENTER, auto_scroll=True)
+        btnVaiACreaPagina = ft.ElevatedButton(text='Crea il tuo viaggio', on_click=lambda e:self.vaiACrea([self.colViaggi,self.mesePartenza, self.annoPartenza, self.ddStati, self.ddCategoriaCosto ]))
+        self.rowVaiACrea = ft.Row(controls=[ft.Text("Non trovi un viaggio che ti piaccia?", color='blue', size=16), btnVaiACreaPagina], alignment=ft.MainAxisAlignment.CENTER)
 
         self.contentPrenota.controls = [ft.Container(height=4), self.title_prenota, rowDatiInput, ft.Divider(height=1, thickness=2, color="blue"), self.colViaggi]
         return self.contentPrenota
@@ -82,7 +85,7 @@ class View:
         self.rowValutazione = ft.Row(alignment=ft.MainAxisAlignment.CENTER)
         self.ddViaggi = ft.Dropdown(label="Scegli un viaggio", width=500)
         self.ddVoti = ft.Dropdown(label="Voto")
-        btnValuta = ft.ElevatedButton(text="Valuta", on_click=self.controller.valutaViaggio)
+        btnValuta = ft.ElevatedButton(text="Valuta", on_click=lambda e: self.controller.valutaViaggio([self.ddViaggi, self.ddVoti]))
         self.rowValutazione = ft.Row([self.ddViaggi, self.ddVoti, btnValuta],alignment=ft.MainAxisAlignment.CENTER)
 
 
@@ -102,16 +105,19 @@ class View:
         self.ddCountry1 = ft.Dropdown(label='Scegli uno stato')
         self.ddCountry2 = ft.Dropdown(label='Scegli uno stato')
         self.ddCountry3 = ft.Dropdown(label='Scegli uno stato')
-        self.numeroAttrazioniMax = ft.TextField(label="Numero massimo attrazioni")
+        self.numeroAttrazioniMax = ft.TextField(label="Numero attrazioni")
         rowStati = ft.Row(controls=[self.ddCountry1, self.ddCountry2, self.ddCountry3], alignment=ft.MainAxisAlignment.CENTER)
         self.controller.fillDDStatiCrea()
         self.ddLingue = ft.Dropdown(label='Lingua per le visite guidate')
         self.controller.fillDDLingue()
-        self.ddCategoriaCostoCrea = self.ddCategoriaCosto
+        self.ddCategoriaCostoCrea = copy.deepcopy(self.ddCategoriaCosto)
         self.ddCategoriaCostoCrea.options.pop(0)
+        self.ddCategoriaCostoCrea.value = None
         rowUltimeCose = ft.Row(controls=[self.numeroAttrazioniMax, self.ddLingue, self.ddCategoriaCostoCrea], alignment=ft.MainAxisAlignment.CENTER)
-        rowInvia = ft.Row(controls=[ft.ElevatedButton(text='Crea viaggio', on_click=self.controller.creaViaggio)])
-        self.contentCrea.controls = [ft.Container(height=4), titleCrea,rowData, rowStati, rowUltimeCose, rowInvia]
+        rowInvia = ft.Row(controls=[ft.ElevatedButton(text='Crea viaggio', on_click=self.controller.creaViaggio)], alignment=ft.MainAxisAlignment.CENTER)
+        self.colRisultati = ft.Column()
+        self.contentCrea.controls = [ft.Container(height=4), titleCrea,rowData, rowStati, rowUltimeCose, rowInvia, ft.Row(controls=[self.colRisultati], alignment=ft.MainAxisAlignment.CENTER)]
+
         return self.contentCrea
 
 
@@ -124,7 +130,10 @@ class View:
 
 
 
-
+    def vaiACrea(self, listaP):
+        self.tabs.selected_index = 1
+        self.controller.svuotaParametri(listaP)
+        self.update_page()
 
 
 

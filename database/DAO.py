@@ -1,3 +1,5 @@
+import random
+
 from database.DB_connect import DBConnect
 import mysql.connector
 
@@ -272,18 +274,17 @@ class DAO():
         return result
 
     @staticmethod
-    def aggiornaTraveler(name, surname, age, address, phone, email, gender):
+    def aggiungiTraveler(name, surname, age, address, phone, email, gender):
         conn = DBConnect.get_connection()
 
         esito = None
 
         cursor = conn.cursor(dictionary=True)
-        query = """update traveler
-                    set name = %s, surname = %s, age = %s, address = %s, phone = %s, gender = %s
-                    where email = %s
+        query = """insert into traveler(name, surname, age, address, phone, email, gender)
+                    values (%s, %s, %s, %s ,%s ,%s ,%s)
                                                     """
         try:
-            cursor.execute(query, (name, surname, age, address, phone, gender, email))
+            cursor.execute(query, (name, surname, age, address, phone, email, address))
             conn.commit()
             esito = True
         except mysql.connector.Error as err:
@@ -382,7 +383,7 @@ class DAO():
         result = []
 
         cursor = conn.cursor(dictionary=True)
-        query = """select ta.tourist_attraction_id as id, ta.cost as cost , d.country as country 
+        query = """select ta.tourist_attraction_id as id, ta.cost as cost , d.country as country , ta.name as nameAtt, d.name as nameDest, d.destination_id as dest_id
 from tourist_attraction ta , destination d 
 where ta.destination_id = d.destination_id 
 and (d.country =%s or d.country =%s or d.country =%s)           
@@ -405,22 +406,22 @@ and (d.country =%s or d.country =%s or d.country =%s)
         result = []
 
         cursor = conn.cursor(dictionary=True)
-        query = """select t1.tourist_attraction_id as at1, t1.cost as c1, t2.country as st1, t2.tourist_attraction_id as at2, t2.cost as c2, t1.country as st2
-from (select ta.tourist_attraction_id, ta.cost , d.country 
+        query = """select t1.tourist_attraction_id as at1, t1.cost as c1, t1.country as st1, t1.attN as nameAtt1, t1.destN as nameDest1, t1.d_id as dest_id1,t2.tourist_attraction_id as at2, t2.cost as c2, t2.country as st2, t2.attN as nameAtt2, t2.destN as nameDest2, t2.d_id as dest_id2
+from (select ta.tourist_attraction_id, ta.cost , d.country , ta.name as attN, d.name destN, d.destination_id as d_id 
 			from tourist_attraction ta , destination d 
 			where ta.destination_id = d.destination_id 
 			and (d.country =%s or d.country =%s or d.country =%s)) t1,
-			(select ta.tourist_attraction_id, ta.cost , d.country 
+			(select ta.tourist_attraction_id, ta.cost , d.country , ta.name as attN, d.name destN, d.destination_id as d_id 
 			from tourist_attraction ta , destination d 
 			where ta.destination_id = d.destination_id 
 			and (d.country =%s or d.country =%s or d.country =%s)) t2
-where t1.tourist_attraction_id < t2.tourist_attraction_id          
+where t1.tourist_attraction_id < t2.tourist_attraction_id  
                             """
 
         cursor.execute(query, (stato1, stato2, stato3, stato1, stato2, stato3))
 
         for row in cursor:
-            result.append((Attraction(row['at1'], row['c1'], row['st1']), Attraction(row['at2'], row['c2'], row['st2'])))
+            result.append((Attraction(row['at1'], row['c1'], row['st1'], row['nameAtt1'], row['nameDest1'], row['dest_id1']), Attraction(row['at2'], row['c2'], row['st2'],row['nameAtt2'], row['nameDest2'], row['dest_id2'])))
 
         cursor.close()
         conn.close()
@@ -434,11 +435,12 @@ where t1.tourist_attraction_id < t2.tourist_attraction_id
         result = []
 
         cursor = conn.cursor(dictionary=True)
-        query = """select round( avg(round(tp.cost_attraction / t1.c, 1 )), 1)  as c
-from trip_package tp , 
-						(select tpha.trip_package_id, count(tpha.tourist_attraction_id) as c
-						from trip_package_has_attraction tpha
-						group by tpha.trip_package_id) t1
+        query = """select round( (avg(round(tp.cost_attraction / t1.c, 1 ))/(1+t2.m)), 1)  as c
+                    from trip_package tp , 
+                                            (select tpha.trip_package_id, count(tpha.tourist_attraction_id) as c
+                                            from trip_package_has_attraction tpha
+                                            group by tpha.trip_package_id) t1, (select round(avg(tg.cost_percentage) /100, 2) as m
+																			from travel_guide tg) t2		
 where tp.trip_package_id = t1.trip_package_id            
                                     """
 
@@ -450,3 +452,71 @@ where tp.trip_package_id = t1.trip_package_id
         cursor.close()
         conn.close()
         return result[0]
+
+
+    @staticmethod
+    def getGuida(idLingua):
+        conn = DBConnect.get_connection()
+
+        result = []
+
+        cursor = conn.cursor(dictionary=True)
+        query = """select tghl.travel_guide_employee_AM as id, tg.cost_percentage as cost
+                from travel_guide_has_languages tghl , languages l, travel_guide tg 
+                where l.languages_id = %s
+                and l.languages_id = tghl.languages_id 
+                and tg.travel_guide_employee_AM = tghl.travel_guide_employee_AM           
+                                            """
+
+        cursor.execute(query, (idLingua,))
+
+        for row in cursor:
+            result.append((row['id'], row['cost']))
+
+        cursor.close()
+        conn.close()
+        return random.choice(result)
+
+
+    @staticmethod
+    def creaTripPackage(data, costoAttraction, costoAccomodation, cost_category):
+        conn = DBConnect.get_connection()
+
+        esito = None
+
+        cursor = conn.cursor(dictionary=True)
+        query = """insert into trip_package(trip_start,cost_attraction,cost_accomodation,package_cost_category_id ) values
+                                    (%s, %s,%s,%s)
+                                                                            """
+        try:
+            cursor.execute(query, (data, costoAttraction, costoAccomodation, cost_category))
+            conn.commit()
+            esito = True
+        except mysql.connector.Error as err:
+            esito = False
+        cursor.close()
+        conn.close()
+        return esito
+
+
+    @staticmethod
+    def getIdTripPackage():
+        conn = DBConnect.get_connection()
+
+        result = ''
+
+        cursor = conn.cursor(dictionary=True)
+        query = """select *
+                    from trip_package
+                    order by trip_package_id desc
+                    limit 1       
+                     """
+
+        cursor.execute(query, ())
+
+        for row in cursor:
+            result = Trip_package(**row)
+
+        cursor.close()
+        conn.close()
+        return result
