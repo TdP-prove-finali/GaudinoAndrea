@@ -114,59 +114,7 @@ class Controller:
         self.view.update_page()
 
 
-    # def inviaDati(self, e):
-    #     mese = int(self.view.mesePartenza.value)
-    #     anno = int(self.view.annoPartenza.value)
-    #     destinazionePrimaria = self.view.ddStati.value
-    #     costo = self.view.ddCategoriaCosto.value
-    #
-    #     self.input_data = {"Data partenza": dataP, "Durata viaggio": durata, "Destinazione": destinazionePrimaria, "Costo": costo}
-    #
-    #     self.listaDraggable.clear()
-    #     self.listaTarget.clear()
-    #
-    #     index = 0
-    #     for key in self.input_data:
-    #         if self.input_data[key] is not None and key != "Durata viaggio":
-    #             draggable = ft.Draggable(
-    #                 content=ft.Container(
-    #                     width=250,
-    #                     height=50,
-    #                     border_radius=5,
-    #                     bgcolor='yellow',
-    #                     content=ft.Text(key, size=20),
-    #                     alignment=ft.alignment.center,
-    #                 ),
-    #                 data=key
-    #             )
-    #             target = ft.DragTarget(
-    #                 content=ft.Container(
-    #                     width=250,
-    #                     height=50,
-    #                     border_radius=5,
-    #                     bgcolor='lightgreen',
-    #                     opacity=0.7,
-    #                     content=ft.Text("", size=20),
-    #                     alignment=ft.alignment.center,
-    #                 ),
-    #                 on_accept=lambda e, i=index: self.drag_accept(e, i)
-    #             )
-    #
-    #             self.listaDraggable.append(draggable)
-    #             self.listaTarget.append(target)
-    #             index+=1
-    #     self.view.colonnaDraggable.controls = self.listaDraggable
-    #     self.view.colonnaTarget.controls = self.listaTarget
-    #     self.view.contentPrenota.controls.append(ft.Row(controls=[ft.Text("Ordina i parametri per importanza", color='blue', size= 18)], alignment=ft.MainAxisAlignment.CENTER))
-    #     self.view.contentPrenota.controls.append(self.view.rowOrdinamento)
-    #     self.view.update_page()
-    #
-    # def drag_accept(self, e, index):
-    #     # Recupera il controllo sorgente
-    #     src = self.view.page.get_control(e.src_id)
-    #     # Aggiorna il testo nel drag target corrispondente
-    #     self.listaTarget[index].content.content.value = src.data
-    #     self.view.update_page()
+
 
     def ricercaViaggi(self, e):
         mese = self.view.mesePartenza.value
@@ -404,6 +352,7 @@ class Controller:
         lingua = self.view.ddLingue.value
         costoAccomodation = self.view.ddCategoriaCostoCrea.value
 
+
         if data == '':
             self.view.create_alert('Data mancante!')
             return
@@ -427,7 +376,7 @@ class Controller:
         destinazioni = list(set(x.nameDest for x in solBest))
         strDestinazioni = ", ".join(destinazioni)
         # attrazioni = [x.nameAtt for x in solBest]
-        container = ft.Container(border=ft.border.all(2, "blue"))
+        self.containerInfoViaggio = ft.Container(border=ft.border.all(2, "blue"))
 
         content = ft.Column()
         # Prima riga centrata
@@ -462,8 +411,8 @@ class Controller:
             alignment=ft.MainAxisAlignment.CENTER))
 
         # Aggiunta del container alla view
-        container.content = content
-        self.view.contentCrea.controls.append(container)
+        self.containerInfoViaggio.content = content
+        self.view.contentCrea.controls.append(self.containerInfoViaggio)
 
         self.view.update_page()
 
@@ -475,15 +424,18 @@ class Controller:
             if listaCheckbox[i].value is True:
                 resultGuida = self.model.getGuidaLingua(int(lingua))
                 costoAttraction += attr.cost * (1+round(int(resultGuida[1]), 2))
+                dizioAttrazioni[attr] = resultGuida[0]
             else:
                 costoAttraction += attr.cost
+                dizioAttrazioni[attr] = None
         campiData = data.split("-")
         nuovaData = datetime.date(int(campiData[2]), int(campiData[1]), int(campiData[0]))
         id = self.model.creaTripPackage(nuovaData, costoAttraction, costoAccomodation, int(costoAccomodation/300))
         if id is None:
             self.view.create_alert('Inserimento nuovo trip package fallito!!')
             return
-        self.prenota(id)
+        self.prenota(id, [self.view.textDataP,self.view.ddCountry1,self.view.ddCountry2,self.view.ddCountry3,self.view.numeroAttrazioniMax, self.view.ddLingue,self.view.ddCategoriaCostoCrea, self.containerInfoViaggio])
+        self.model.aggiungiTripPackageATabelle(id, dizioAttrazioni)
 
 
     def svuotaParametri(self, listaParametri):
@@ -494,5 +446,7 @@ class Controller:
                 p.value = ''
             elif isinstance(p, ft.Column) or isinstance(p, ft.Row):
                 p.controls.clear()
+            elif isinstance(p, ft.Container):
+                p.content = None
         self.view.update_page()
 

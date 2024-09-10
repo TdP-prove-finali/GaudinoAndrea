@@ -69,10 +69,7 @@ class Model:
 
 
     def aggiungiTraveler(self, name, surname, age, address, phone, email, gender):
-        if gender == 'other':
-            return DAO.aggiungiTraveler(name, surname, age, address, phone, email, None)
-        else:
-            return DAO.aggiungiTraveler(name, surname, age, address, phone, email, gender)
+        return DAO.aggiungiTraveler(name, surname, age, address, phone, email, gender)
 
 
 
@@ -82,7 +79,7 @@ class Model:
         if customerId:
             id = customerId[0]
         else:
-            if not DAO.registraNuovoCliente(name, surname, age, address, phone, email, gender):
+            if not DAO.aggiungiTraveler(name, surname, age, address, phone, email, gender):
                 return False
         id = DAO.trovaCustomerID(email)[0]
         return DAO.prenota(trip_id, id, offerta, datetime.date.today())
@@ -153,6 +150,12 @@ class Model:
         if not DAO.creaTripPackage(data, costoAttraction, costoAccomodation, cost_category):
             return None
         return DAO.getIdTripPackage()
+
+
+    def aggiungiTripPackageATabelle(self, trip_package, dizioAttrazioni):
+        for i in dizioAttrazioni:
+            DAO.aggiungiTripPackageHasDestination(trip_package.trip_package_id, i.dest_id)
+            DAO.aggiungiTripPackageHasAttraction(trip_package.trip_package_id, i.id, dizioAttrazioni[i])
 
 
 

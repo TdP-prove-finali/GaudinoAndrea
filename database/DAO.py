@@ -284,7 +284,7 @@ class DAO():
                     values (%s, %s, %s, %s ,%s ,%s ,%s)
                                                     """
         try:
-            cursor.execute(query, (name, surname, age, address, phone, email, address))
+            cursor.execute(query, (name, surname, age, address, phone, email, gender))
             conn.commit()
             esito = True
         except mysql.connector.Error as err:
@@ -292,6 +292,8 @@ class DAO():
         cursor.close()
         conn.close()
         return esito
+
+
     @staticmethod
     def trovaCustomerID(email):
         conn = DBConnect.get_connection()
@@ -314,25 +316,25 @@ class DAO():
         return result
 
 
-    @staticmethod
-    def registraNuovoCliente(name, surname, age, address, phone, email, gender):
-        conn = DBConnect.get_connection()
-
-        esito = None
-
-        cursor = conn.cursor(dictionary=True)
-        query = """insert into traveler(name, surname, age, address, phone, email, gender) values
-                    (%s, %s,%s,%s,%s,%s,%s)
-                                                            """
-        try:
-            cursor.execute(query, (name, surname, age, address, phone, email, gender))
-            conn.commit()
-            esito = True
-        except mysql.connector.Error as err:
-            esito = False
-        cursor.close()
-        conn.close()
-        return esito
+    # @staticmethod
+    # def registraNuovoCliente(name, surname, age, address, phone, email, gender):
+    #     conn = DBConnect.get_connection()
+    #
+    #     esito = None
+    #
+    #     cursor = conn.cursor(dictionary=True)
+    #     query = """insert into traveler(name, surname, age, address, phone, email, gender) values
+    #                 (%s, %s,%s,%s,%s,%s,%s)
+    #                                                         """
+    #     try:
+    #         cursor.execute(query, (name, surname, age, address, phone, email, gender))
+    #         conn.commit()
+    #         esito = True
+    #     except mysql.connector.Error as err:
+    #         esito = False
+    #     cursor.close()
+    #     conn.close()
+    #     return esito
 
     @staticmethod
     def prenota(trip_id, traveler_id, offerta, data):
@@ -520,3 +522,44 @@ where tp.trip_package_id = t1.trip_package_id
         cursor.close()
         conn.close()
         return result
+
+
+    @staticmethod
+    def aggiungiTripPackageHasDestination(trip_id, dest_id):
+        conn = DBConnect.get_connection()
+
+        esito = None
+
+        cursor = conn.cursor(dictionary=True)
+        query = """insert into trip_package_has_destination(trip_package_id, destination_id) values
+                                            (%s, %s)
+                                                                                    """
+        try:
+            cursor.execute(query, (trip_id, dest_id))
+            conn.commit()
+            esito = True
+        except mysql.connector.Error as err:
+            esito = False
+        cursor.close()
+        conn.close()
+        return esito
+
+    @staticmethod
+    def aggiungiTripPackageHasAttraction(trip_id, attr_id, guide_id):
+        conn = DBConnect.get_connection()
+
+        esito = None
+
+        cursor = conn.cursor(dictionary=True)
+        query = """insert into trip_package_has_attraction(trip_package_id,tourist_attraction_id,travel_guide_employee_AM) values
+                                                (%s, %s, %s)
+                                                                                        """
+        try:
+            cursor.execute(query, (trip_id, attr_id,guide_id))
+            conn.commit()
+            esito = True
+        except mysql.connector.Error as err:
+            esito = False
+        cursor.close()
+        conn.close()
+        return esito
