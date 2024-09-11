@@ -1,5 +1,7 @@
 import copy
 import datetime
+import math
+
 import networkx as nx
 
 import flet as ft
@@ -11,8 +13,8 @@ class Model:
     def __init__(self):
         self.grafo= nx.Graph()
 
-    def getViaggiUtente(self, mail_utente):
-        dizio = DAO.getViaggiUtente(mail_utente)
+    def getViaggiUtente(self, mail_utente, data):
+        dizio = DAO.getViaggiUtente(mail_utente, data)
         return dizio
 
 
@@ -63,7 +65,7 @@ class Model:
         return DAO.getOfferteViaggio(trip_id, data)
 
 
-    def autoCompila(self, email):
+    def getTraveler(self, email):
         return DAO.getInfoTraveler(email)
 
 
@@ -82,65 +84,81 @@ class Model:
             if not DAO.aggiungiTraveler(name, surname, age, address, phone, email, gender):
                 return False
         id = DAO.trovaCustomerID(email)[0]
-        return DAO.prenota(trip_id, id, offerta, datetime.date.today())
+        if not offerta:
+            return DAO.prenota(trip_id, id, offerta, datetime.date.today())
+        else:
+            return DAO.prenota(trip_id, id, offerta.offer_id, datetime.date.today())
 
     def getLingue(self):
         return DAO.getLingue()
 
     def creaViaggio(self, stato1, stato2, stato3, numeroAttr):
+        self.grafo.clear()
         self.grafo.add_nodes_from(DAO.getAllNodes(stato1, stato2, stato3))
-        self.grafo.add_edges_from(DAO.getAllEdges(stato1, stato2, stato3))
-        #mediaCosti = DAO.getMediaCosti()
+        for attrazione in list(self.grafo.nodes):
+            for altra_attrazione in list(self.grafo.nodes):
+                if attrazione.id != altra_attrazione.id and abs(
+                        attrazione.cost - altra_attrazione.cost) <= 2:
+                    self.grafo.add_edge(attrazione, altra_attrazione)
         stati = [stato1, stato2, stato3]
         statiNonNulli = [x for x in stati if x is not None]
         self.solBest = []
-        self.bestCosto = 100000000
+        self.bestCosto = float(math.inf)
+
+
+
 
 
         for i in list(self.grafo.nodes):
             parziale = [i]
             if int(numeroAttr) > len(self.grafo.nodes):
                 numeroAttr = len(self.grafo.nodes)
-            self.ricorsione(i, parziale, int(numeroAttr), statiNonNulli)
+            self.ricorsione(i, parziale, int(numeroAttr), statiNonNulli, costo=0)
 
-        print(self.solBest)
+        statiUsati = set()
+        if self.solBest == []:
+            self.bestCosto = 0
+            for i in list(self.grafo.nodes):
+                if i.country not in statiUsati:
+                    self.solBest.append(i)
+                    self.bestCosto += i.cost
+                    statiUsati.add(i.country)
+
         return self.solBest, self.bestCosto
 
 
 
-    def ricorsione(self, v, parziale, numeroAttr, stati):
-        vicini = list(nx.neighbors(self.grafo, v))
-        viciniAmmissibili = self.getAmmissibili(vicini, copy.deepcopy(parziale), numeroAttr)
-        if not viciniAmmissibili:
+    def ricorsione(self, v, parziale, numeroAttr, stati, costo):
+        #costo = sum([x.cost for x in parziale])
+        if costo >= self.bestCosto:
+            return
+        if  len(parziale) == numeroAttr:
             statiDiversi = set(x.country for x in parziale)
-            costo = sum([x.cost for x in copy.deepcopy(parziale)])
-            if len(statiDiversi) == len(stati) and len(parziale) == numeroAttr and costo < self.bestCosto:
-                self.solBest = copy.deepcopy(parziale)
-                self.bestCosto = costo
-                print('Soluzione trovata')
-        else:
-            for v in viciniAmmissibili:
-                parziale.append(v)
-                self.ricorsione(v, parziale, numeroAttr, stati)
-                parziale.pop()
+            if len(statiDiversi) == len(stati):
+                if costo < self.bestCosto:
+                    self.solBest = copy.deepcopy(parziale)
+                    self.bestCosto = costo
+                    print('soluzione trovata')
+
+        vicini = list(nx.neighbors(self.grafo, v))
+        viciniAmmissibili = self.getAmmissibili(vicini, parziale, numeroAttr)
+        for v in viciniAmmissibili:
+            parziale.append(v)
+            newCosto = costo + v.cost
+            self.ricorsione(v, parziale, numeroAttr, stati, newCosto)
+            parziale.pop()
 
 
 
     def getAmmissibili(self, vicini, parziale, numeroAttr):
         if len(parziale) == numeroAttr:
             return []
-        ammmissibili =[]
+        ammissibili = []
+        parziale_set = set(parziale)
         for v in vicini:
-            if v not in parziale:
-                ammmissibili.append(v)
-        return ammmissibili
-
-    def calcolaMedia(self, parziale, v):
-        parziale.append(v)
-        costo = 0
-        for i in parziale:
-            costo += i.cost
-        return costo/len(parziale)
+            if v not in parziale_set:
+                ammissibili.append(v)
+        return ammissibili
 
 
     def getGuidaLingua(self, idLingua):
@@ -157,5 +175,13 @@ class Model:
             DAO.aggiungiTripPackageHasDestination(trip_package.trip_package_id, i.dest_id)
             DAO.aggiungiTripPackageHasAttraction(trip_package.trip_package_id, i.id, dizioAttrazioni[i])
 
+    def getTripPakcage(self, trip_id):
+        return DAO.getIdTripPackage()
 
+    def aggiornaDatiTraveler(self, name, surname, age, address, phone, email, gender):
+        DAO.aggiornaDatiTraveler(name, surname, age, address, phone, email, gender)
+
+
+    def getVotiCitta(self):
+        return DAO.getVotiCitta()
 

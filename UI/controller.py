@@ -19,10 +19,13 @@ class Controller:
 
     def cercaViaggiUtente(self, e):
         self.mail_utente = self.view.mail_utente.value
+        self.view.ddViaggi.value = None
+        self.view.ddVoti.value = None
         if self.mail_utente != "":
-            #dropdown viaggi
-            dizio = self.model.getViaggiUtente(self.mail_utente)
+
+            dizio = self.model.getViaggiUtente(self.mail_utente, datetime.date.today())
             if len(dizio) != 0:
+                # dropdown viaggi
                 lista_opzioni = []
                 for trip in dizio:
                     data = dizio[trip][0][1]
@@ -52,9 +55,10 @@ class Controller:
             if not self.model.valutaViaggio(trip_id, voto, self.mail_utente):
                 self.view.create_alert("Viaggio già valutato!")
             else:
-                self.rigaRisultato = ft.Row(controls=[ft.Text("Valutazione registrata correttamente", color="blue", size=16)], alignment=ft.MainAxisAlignment.CENTER)
-                self.view.contentValuta.controls.append(self.rigaRisultato)
-                listaP.append(self.rigaRisultato)
+                self.rigaRisultato = ft.Row(controls=[ft.Text("Valutazione registrata correttamente", color="blue", size=20)], alignment=ft.MainAxisAlignment.CENTER)
+                dlg = ft.AlertDialog(content=self.rigaRisultato)
+                self.view.page.dialog = dlg
+                dlg.open = True
                 self.svuotaParametri(listaP)
         except TypeError:
             self.view.create_alert("Viaggio o valutazione non selezionati!!")
@@ -145,7 +149,7 @@ class Controller:
             lista_viaggi.sort(key=lambda x: x.package_cost_category_id)
 
         self.view.colViaggi.controls.clear()
-        self.view.rowVaiACrea.controls.clear()
+        #self.view.rowVaiACrea.controls.clear()
         self.view.update_page()
         self.view.contentPrenota.controls.append(self.view.rowVaiACrea)
 
@@ -168,9 +172,23 @@ class Controller:
 
             # Aggiungi le destinazioni e il costo al contenitore
             destinazioni = set(x.country for x in dizio_viaggi[v][0])
+            citta = [x.name for x in dizio_viaggi[v][0]]
+            votiCitta = self.model.getVotiCitta()
+            voti = [float(votiCitta[x]) for x in votiCitta if x in citta]
+            media = 0
+            for i in voti:
+                media+=i
+            media = media/len(voti)
+            #valutazioneMedia = self.custom_round(media)
+
+
             strDestinazioni = ", ".join(map(str, destinazioni))
             rowDestinazioni = ft.Row(
                 controls=[ft.Text('Destinazioni: ', weight=ft.FontWeight.BOLD), ft.Text(value=strDestinazioni)])
+            rowValutazione = ft.Row(
+                controls=[ft.Text("Valutazione destinazioni: ", weight=ft.FontWeight.BOLD),
+                          ft.Text(f"{round(media,1)} ★")]
+            )
             costoViaggio = v.cost_attraction + v.cost_accomodation
             rowCosto = ft.Row(controls=[ft.Text('Costo: ', weight=ft.FontWeight.BOLD), ft.Text(value=str(costoViaggio))])
 
@@ -181,7 +199,7 @@ class Controller:
             btnPrenota = ft.ElevatedButton(text="Prenota viaggio", on_click=lambda e: self.prenota(v, [self.view.mesePartenza, self.view.annoPartenza, self.view.ddStati, self.view.ddCategoriaCosto, self.view.colViaggi]))
 
             # Imposta il contenuto del contenitore e aggiungi alla colonna
-            row.controls = [rowDestinazioni, rowCosto, rowPartenza, btnDettagli, btnPrenota]
+            row.controls = [rowDestinazioni, rowValutazione , rowCosto, rowPartenza, btnDettagli, btnPrenota]
             container.content = row
 
             #colonnaDaAggiungere = ft.Column(controls=[label, container])
@@ -231,7 +249,7 @@ class Controller:
         self.view.update_page()
 
     def creaTab(self):
-        self.tabPrenota = ft.Tab(text="Inserisci dati", content=self.creaContenutoTab())
+        self.tabPrenota = ft.Tab(text="Inserisci dati", content=self.creaContenutoTab(), icon=ft.icons.PERSON)
 
 
 
@@ -239,9 +257,9 @@ class Controller:
         if email.value is None or email.value == "":
             self.view.create_alert("Email non inserita")
             return
-        campoTraveler = self.model.autoCompila(email.value)
-        if len(campoTraveler) > 0:
-            self.traveler = campoTraveler[0]
+        traveler = self.model.getTraveler(email.value)
+        if traveler:
+            self.traveler = traveler
         else:
             self.view.create_alert("Email non presente nel database, compilare a mano")
             return
@@ -302,30 +320,45 @@ class Controller:
 
 
     def prenotaViaggio(self, listaParametri):
+        listaParametriNulli = [x.value for x in listaParametri if x.value is None]
+        if listaParametriNulli:
+            self.view.create_alert('Parametri mancanti!!')
+            return
         utentePrenotante = Traveler(self.name.value, self.surname.value, int(self.age.value), self.address.value, self.phone.value, self.email.value, self.gender.value)
 
-        travelerRicercato = self.model.autoCompila(utentePrenotante.email)
+        travelerRicercato = self.model.getTraveler(utentePrenotante.email)
         if not travelerRicercato:
             self.model.aggiungiTraveler(self.name.value, self.surname.value, int(self.age.value), self.address.value,
                                        self.phone.value, self.email.value, self.gender.value)
-
+        else:
+            if utentePrenotante != travelerRicercato:
+                self.model.aggiornaDatiTraveler(self.name.value, self.surname.value, int(self.age.value), self.address.value, self.phone.value, self.email.value, self.gender.value)
 
         offerte = self.model.cercaOfferteViaggio(self.tripScelto.trip_package_id, datetime.date.today())
         bestOfferta = None
         if len(offerte)>0:
             offerte.sort(key = lambda x: x.cost)
             if offerte[0].offer_info_category == 'student' and self.studente:
-                bestOfferta = offerte[0].offer_id
+                bestOfferta = offerte[0]
             elif offerte[0].offer_info_category == 'student' and not self.studente:
-                bestOfferta = offerte[1].offer_id
+                bestOfferta = offerte[1]
             else:
-                bestOfferta = offerte[0].offer_id
+                bestOfferta = offerte[0]
         self.dlgPrenotazione = ft.AlertDialog(actions=[ft.TextButton("Chiudi", on_click= self.chiudi_dialog_prenotazione)])
 
-        if self.model.reservation(self.tripScelto.trip_package_id, self.email.value, bestOfferta, self.name.value, self.surname.value, int(self.age.value), self.address.value, self.phone.value, self.gender.value):
-            self.dlgPrenotazione.content = ft.Text("Prenotazione avvenuta correttamente!!")
+        if self.model.reservation(self.tripScelto.trip_package_id, self.email.value, bestOfferta , self.name.value, self.surname.value, int(self.age.value), self.address.value, self.phone.value, self.gender.value):
+            if bestOfferta is None:
+                contenuto = ft.Column(controls=[ft.Row(controls=[ft.Text("Prenotazione avvenuta correttamente!!")]),
+                                            ft.Row(controls=[ft.Text(f"Costo attraction = {self.tripScelto.cost_attraction}€, costo accomodation = {self.tripScelto.cost_accomodation}€. Totale = {self.tripScelto.cost_attraction+self.tripScelto.cost_accomodation}€")]),
+                                            ft.Row(controls=[ft.Text("Buon viaggio!!!")])])
+            else:
+                contenuto = ft.Column(controls=[ft.Row(controls=[ft.Text("Prenotazione avvenuta correttamente!!")]),
+                                            ft.Row(controls=[ft.Text(f"Hai prenotato con l'offerta {bestOfferta.offer_name}! Il costo è di {bestOfferta.cost}€ rispetto a {self.tripScelto.cost_attraction+self.tripScelto.cost_accomodation}€")]),
+                                            ft.Row(controls=[ft.Text("Buon viaggio!!!")])])
+            self.dlgPrenotazione.content = contenuto
             self.view.page.dialog = self.dlgPrenotazione
             self.dlgPrenotazione.open = True
+            listaParametri.append(self.view.rowVaiACrea)
             self.svuotaParametri(listaParametri)
             self.view.update_page()
         else:
@@ -372,11 +405,13 @@ class Controller:
 
         solBest, costo = self.model.creaViaggio(stato1, stato2, stato3, numeroAttr)
         self.view.colRisultati.controls.clear()
+        self.view.contentCrea.controls.pop()
+        self.containerInfoViaggio = ft.Container(border=ft.border.all(2, "blue"))
         self.view.update_page()
         destinazioni = list(set(x.nameDest for x in solBest))
         strDestinazioni = ", ".join(destinazioni)
         # attrazioni = [x.nameAtt for x in solBest]
-        self.containerInfoViaggio = ft.Container(border=ft.border.all(2, "blue"))
+
 
         content = ft.Column()
         # Prima riga centrata
@@ -423,7 +458,7 @@ class Controller:
         for i, attr in enumerate(solBest):
             if listaCheckbox[i].value is True:
                 resultGuida = self.model.getGuidaLingua(int(lingua))
-                costoAttraction += attr.cost * (1+round(int(resultGuida[1]), 2))
+                costoAttraction += attr.cost * (1+round(int(resultGuida[1]/100), 2))
                 dizioAttrazioni[attr] = resultGuida[0]
             else:
                 costoAttraction += attr.cost
@@ -450,3 +485,13 @@ class Controller:
                 p.content = None
         self.view.update_page()
 
+    def custom_round(self, number):
+        integer_part = int(number)
+        decimal_part = number - integer_part
+
+        if decimal_part < 0.25:
+            return float(integer_part)
+        elif 0.25 <= decimal_part < 0.75:
+            return integer_part + 0.5
+        else:
+            return float(integer_part + 1)

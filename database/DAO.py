@@ -16,7 +16,7 @@ class DAO():
         pass
 
     @staticmethod
-    def getViaggiUtente(mail):
+    def getViaggiUtente(mail, data):
         conn = DBConnect.get_connection()
 
         result = {}
@@ -26,13 +26,14 @@ class DAO():
                     from reservation r, traveler t, trip_package tp , trip_package_has_destination tphd , destination d 
                     where r.Customer_id = t.traveler_id 
                     and t.email = %s
+                    and tp.trip_start < %s
                     and r.trip_package_id = tp.trip_package_id 
                     and tp.trip_package_id = tphd.trip_package_id 
                     and d.destination_id = tphd.destination_id  
                     order by tp.trip_start asc
                             """
 
-        cursor.execute(query, (mail,))
+        cursor.execute(query, (mail,data))
 
         for row in cursor:
             if row['trip_package_id'] not in result:
@@ -256,7 +257,7 @@ class DAO():
     def getInfoTraveler(email):
         conn = DBConnect.get_connection()
 
-        result = []
+        result = ''
 
         cursor = conn.cursor(dictionary=True)
         query = """select t.name , t.surname , t.age , t.address , t.phone , t.email , t.gender 
@@ -267,7 +268,7 @@ class DAO():
         cursor.execute(query, (email,))
 
         for row in cursor:
-            result.append(Traveler(**row))
+            result = Traveler(**row)
 
         cursor.close()
         conn.close()
@@ -316,25 +317,6 @@ class DAO():
         return result
 
 
-    # @staticmethod
-    # def registraNuovoCliente(name, surname, age, address, phone, email, gender):
-    #     conn = DBConnect.get_connection()
-    #
-    #     esito = None
-    #
-    #     cursor = conn.cursor(dictionary=True)
-    #     query = """insert into traveler(name, surname, age, address, phone, email, gender) values
-    #                 (%s, %s,%s,%s,%s,%s,%s)
-    #                                                         """
-    #     try:
-    #         cursor.execute(query, (name, surname, age, address, phone, email, gender))
-    #         conn.commit()
-    #         esito = True
-    #     except mysql.connector.Error as err:
-    #         esito = False
-    #     cursor.close()
-    #     conn.close()
-    #     return esito
 
     @staticmethod
     def prenota(trip_id, traveler_id, offerta, data):
@@ -563,3 +545,72 @@ where tp.trip_package_id = t1.trip_package_id
         cursor.close()
         conn.close()
         return esito
+
+
+    @staticmethod
+    def getTripPackageRichiesto(trip_id):
+        conn = DBConnect.get_connection()
+
+        result = ''
+
+        cursor = conn.cursor(dictionary=True)
+        query = """select *
+                            from trip_package
+                            where trip_package_id = %s       
+                             """
+
+        cursor.execute(query, (trip_id,))
+
+        for row in cursor:
+            result = Trip_package(**row)
+
+        cursor.close()
+        conn.close()
+        return result
+
+    @staticmethod
+    def aggiornaDatiTraveler(name, surname, age, address, phone, email, gender):
+        conn = DBConnect.get_connection()
+
+        esito = None
+
+        cursor = conn.cursor(dictionary=True)
+        query = """update traveler
+                    set name = %s , surname = %s, age= %s, address = %s, phone = %s, gender = %s
+                    where email = %s
+                    """
+        try:
+            cursor.execute(query, (name, surname, age, address, phone, gender, email))
+            conn.commit()
+            esito = True
+        except mysql.connector.Error as err:
+            esito = False
+        cursor.close()
+        conn.close()
+        return esito
+
+
+
+    @staticmethod
+    def getVotiCitta():
+        conn = DBConnect.get_connection()
+
+        result = {}
+
+        cursor = conn.cursor(dictionary=True)
+        query = """select d.name , round(avg(r.rating), 1) as avg
+                    from ratings r , trip_package_has_destination tphd , destination d 
+                    where r.trip_package_id = tphd.trip_package_id 
+                    and tphd.destination_id = d.destination_id 
+                    group by d.name 
+           
+                                                    """
+
+        cursor.execute(query, ())
+
+        for row in cursor:
+            result[row['name']] = row['avg']
+
+        cursor.close()
+        conn.close()
+        return result

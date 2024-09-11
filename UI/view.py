@@ -83,7 +83,7 @@ class View:
                          , alignment=ft.MainAxisAlignment.CENTER)
 
         self.rowValutazione = ft.Row(alignment=ft.MainAxisAlignment.CENTER)
-        self.ddViaggi = ft.Dropdown(label="Scegli un viaggio", width=500)
+        self.ddViaggi = ft.Dropdown(label="Scegli un viaggio", width=700)
         self.ddVoti = ft.Dropdown(label="Voto")
         btnValuta = ft.ElevatedButton(text="Valuta", on_click=lambda e: self.controller.valutaViaggio([self.ddViaggi, self.ddVoti]))
         self.rowValutazione = ft.Row([self.ddViaggi, self.ddVoti, btnValuta],alignment=ft.MainAxisAlignment.CENTER)
