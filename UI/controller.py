@@ -401,6 +401,12 @@ class Controller:
         if costoAccomodation is None or costoAccomodation == '':
             self.view.create_alert('Costo accomodations mancante!')
             return
+
+        if stato1 == stato2 or stato1 == stato3 or stato2 == stato3:
+            self.view.create_alert('Hai selezionato lo stesso stato più volte!!')
+            return
+
+
         costoAccomodation = int(costoAccomodation)*300
 
         solBest, costo = self.model.creaViaggio(stato1, stato2, stato3, numeroAttr)

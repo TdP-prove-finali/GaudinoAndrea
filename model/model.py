@@ -138,7 +138,7 @@ class Model:
                 if costo < self.bestCosto:
                     self.solBest = copy.deepcopy(parziale)
                     self.bestCosto = costo
-                    print('soluzione trovata')
+
 
         vicini = list(nx.neighbors(self.grafo, v))
         viciniAmmissibili = self.getAmmissibili(vicini, parziale, numeroAttr)
@@ -154,9 +154,9 @@ class Model:
         if len(parziale) == numeroAttr:
             return []
         ammissibili = []
-        parziale_set = set(parziale)
+
         for v in vicini:
-            if v not in parziale_set:
+            if v not in parziale:
                 ammissibili.append(v)
         return ammissibili
 
