@@ -76,18 +76,7 @@ class Model:
 
 
 
-    def reservation(self, trip_id, email, offerta, name, surname, age, address, phone, gender):
-        customerId = DAO.trovaCustomerID(email)
-        if customerId:
-            id = customerId[0]
-        else:
-            if not DAO.aggiungiTraveler(name, surname, age, address, phone, email, gender):
-                return False
-        id = DAO.trovaCustomerID(email)[0]
-        if not offerta:
-            return DAO.prenota(trip_id, id, offerta, datetime.date.today())
-        else:
-            return DAO.prenota(trip_id, id, offerta.offer_id, datetime.date.today())
+
 
     def getLingue(self):
         return DAO.getLingue()
@@ -175,8 +164,7 @@ class Model:
             DAO.aggiungiTripPackageHasDestination(trip_package.trip_package_id, i.dest_id)
             DAO.aggiungiTripPackageHasAttraction(trip_package.trip_package_id, i.id, dizioAttrazioni[i])
 
-    def getTripPakcage(self, trip_id):
-        return DAO.getIdTripPackage()
+
 
     def aggiornaDatiTraveler(self, name, surname, age, address, phone, email, gender):
         DAO.aggiornaDatiTraveler(name, surname, age, address, phone, email, gender)
