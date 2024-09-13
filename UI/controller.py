@@ -489,15 +489,11 @@ class Controller:
                 p.controls.clear()
             elif isinstance(p, ft.Container):
                 p.content = None
+                p.border = None
+        self.view.ddCountry2.disabled = True
+        self.view.ddCountry3.disabled = True
+        self.view.ddCountry2.disabled_hint_content=ft.Text("Seleziona il primo stato!")
+        self.view.ddCountry3.disabled_hint_content = ft.Text("Seleziona il primo stato!")
+
         self.view.update_page()
 
-    def custom_round(self, number):
-        integer_part = int(number)
-        decimal_part = number - integer_part
-
-        if decimal_part < 0.25:
-            return float(integer_part)
-        elif 0.25 <= decimal_part < 0.75:
-            return integer_part + 0.5
-        else:
-            return float(integer_part + 1)

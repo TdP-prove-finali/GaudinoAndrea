@@ -101,11 +101,11 @@ class View:
         btnData = ft.ElevatedButton(text='Scegli data', on_click=lambda e: self.page.open(
             ft.DatePicker(first_date=datetime.datetime.today(),
                           on_change=self.riempiDataP)))
-        rowData = ft.Row(controls=[btnData, self.textDataP], alignment=ft.MainAxisAlignment.CENTER)
+        # rowData = ft.Row(controls=[btnData, self.textDataP], alignment=ft.MainAxisAlignment.CENTER)
         self.ddCountry1 = ft.Dropdown(label='Scegli uno stato', on_change=self.abilitaCountry2)
         self.ddCountry2 = ft.Dropdown(label='Scegli uno stato', disabled=True, disabled_hint_content=ft.Text("Seleziona il primo stato!"), on_change=self.abilitaCountry3)
         self.ddCountry3 = ft.Dropdown(label='Scegli uno stato', disabled=True, disabled_hint_content=ft.Text("Seleziona il primo stato!"))
-        self.numeroAttrazioniMax = ft.TextField(label="Numero attrazioni")
+        self.numeroAttrazioniMax = ft.TextField(label="Numero attrazioni", width=100)
         rowStati = ft.Row(controls=[self.ddCountry1, self.ddCountry2, self.ddCountry3], alignment=ft.MainAxisAlignment.CENTER)
         self.controller.fillDDStatiCrea()
         self.ddLingue = ft.Dropdown(label='Lingua per le visite guidate')
@@ -113,10 +113,10 @@ class View:
         self.ddCategoriaCostoCrea = copy.deepcopy(self.ddCategoriaCosto)
         self.ddCategoriaCostoCrea.options.pop(0)
         self.ddCategoriaCostoCrea.value = None
-        rowUltimeCose = ft.Row(controls=[self.numeroAttrazioniMax, self.ddLingue, self.ddCategoriaCostoCrea], alignment=ft.MainAxisAlignment.CENTER)
+        rowUltimeCose = ft.Row(controls=[btnData, self.textDataP, self.numeroAttrazioniMax, self.ddLingue, self.ddCategoriaCostoCrea], alignment=ft.MainAxisAlignment.CENTER)
         rowInvia = ft.Row(controls=[ft.ElevatedButton(text='Crea viaggio', on_click=self.controller.creaViaggio)], alignment=ft.MainAxisAlignment.CENTER)
         self.colRisultati = ft.Column()
-        self.contentCrea.controls = [ft.Container(height=4), titleCrea,rowData, ft.Row([ft.Text("Scegli da 1 a 3 stati per il tuo viaggio")], alignment=ft.MainAxisAlignment.CENTER),  rowStati, rowUltimeCose, rowInvia, ft.Row(controls=[self.colRisultati], alignment=ft.MainAxisAlignment.CENTER)]
+        self.contentCrea.controls = [ft.Container(height=4), titleCrea, ft.Row([ft.Text("Scegli da 1 a 3 stati per il tuo viaggio")], alignment=ft.MainAxisAlignment.CENTER),  rowStati, rowUltimeCose, rowInvia, ft.Divider(height=1, thickness=2, color="blue"), ft.Row(controls=[self.colRisultati], alignment=ft.MainAxisAlignment.CENTER)]
 
         return self.contentCrea
 
