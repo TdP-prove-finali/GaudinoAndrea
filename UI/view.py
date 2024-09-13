@@ -66,7 +66,7 @@ class View:
         btnVaiACreaPagina = ft.ElevatedButton(text='Crea il tuo viaggio', on_click=lambda e:self.vaiACrea([self.colViaggi,self.mesePartenza, self.annoPartenza, self.ddStati, self.ddCategoriaCosto ]))
         self.rowVaiACrea = ft.Row(controls=[ft.Text("Non trovi un viaggio che ti piaccia?", color='blue', size=16), btnVaiACreaPagina], alignment=ft.MainAxisAlignment.CENTER)
 
-        self.contentPrenota.controls = [ft.Container(height=4), self.title_prenota, rowDatiInput, ft.Divider(height=1, thickness=2, color="blue"), self.colViaggi]
+        self.contentPrenota.controls = [ft.Container(height=4), self.title_prenota, rowDatiInput, ft.Divider(height=1, thickness=2, color="blue"), self.rowVaiACrea ,self.colViaggi]
         return self.contentPrenota
 
     def content_valuta(self):

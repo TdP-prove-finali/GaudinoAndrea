@@ -151,7 +151,7 @@ class Controller:
         self.view.colViaggi.controls.clear()
 
         self.view.update_page()
-        self.view.contentPrenota.controls.append(self.view.rowVaiACrea)
+        #self.view.contentPrenota.controls.append(self.view.rowVaiACrea)
 
         for v in lista_viaggi:
             offerte = self.model.cercaOfferteViaggio(v.trip_package_id, datetime.date.today())
@@ -368,7 +368,7 @@ class Controller:
             self.dlgPrenotazione.content = contenuto
             self.view.page.dialog = self.dlgPrenotazione
             self.dlgPrenotazione.open = True
-            listaParametri.append(self.view.rowVaiACrea)
+            #listaParametri.append(self.view.rowVaiACrea)
             self.svuotaParametri(listaParametri)
             self.view.update_page()
         else:
