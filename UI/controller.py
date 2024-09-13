@@ -149,12 +149,13 @@ class Controller:
             lista_viaggi.sort(key=lambda x: x.package_cost_category_id)
 
         self.view.colViaggi.controls.clear()
-        #self.view.rowVaiACrea.controls.clear()
+
         self.view.update_page()
         self.view.contentPrenota.controls.append(self.view.rowVaiACrea)
 
         for v in lista_viaggi:
             offerte = self.model.cercaOfferteViaggio(v.trip_package_id, datetime.date.today())
+            offerte.sort(key=lambda x: x.cost)
 
             # Crea una colonna per ogni viaggio
             row = ft.Row(alignment=ft.MainAxisAlignment.CENTER)
@@ -179,7 +180,7 @@ class Controller:
             for i in voti:
                 media+=i
             media = media/len(voti)
-            #valutazioneMedia = self.custom_round(media)
+
 
 
             strDestinazioni = ", ".join(map(str, destinazioni))
@@ -194,27 +195,32 @@ class Controller:
 
             rowPartenza = ft.Row(controls=[ft.Text("Data partenza: ", weight=ft.FontWeight.BOLD),ft.Text(v.trip_start.strftime("%d-%m-%Y"))])
 
-            btnDettagli = ft.ElevatedButton(text="Dettagli viaggio", on_click=lambda e: self.dettagliViaggio(dizio_viaggi[v][0], dizio_viaggi[v][1], dizio_viaggi[v][2]))
+            btnDettagli = ft.ElevatedButton(
+                text="Dettagli viaggio",
+                on_click=lambda e, v1=v, dizio_viaggi1=dizio_viaggi, offerte1=offerte, costoViaggio1=costoViaggio:
+                self.dettagliViaggio(dizio_viaggi1[v1][0], dizio_viaggi1[v1][1], dizio_viaggi1[v1][2], offerte1, costoViaggio1))
 
-            btnPrenota = ft.ElevatedButton(text="Prenota viaggio", on_click=lambda e: self.prenota(v, [self.view.mesePartenza, self.view.annoPartenza, self.view.ddStati, self.view.ddCategoriaCosto, self.view.colViaggi]))
-
+            btnPrenota = ft.ElevatedButton(
+                text="Prenota viaggio",
+                on_click=lambda e, v1=v: self.prenota(v1,
+                                                     [self.view.mesePartenza, self.view.annoPartenza, self.view.ddStati,
+                                                      self.view.ddCategoriaCosto, self.view.colViaggi]))
             # Imposta il contenuto del contenitore e aggiungi alla colonna
             row.controls = [rowDestinazioni, rowValutazione , rowCosto, rowPartenza, btnDettagli, btnPrenota]
             container.content = row
 
-            #colonnaDaAggiungere = ft.Column(controls=[label, container])
-            # Aggiungi la colonna alla pagina
+
 
             self.view.colViaggi.controls.append(ft.Column(controls=[label, container], spacing=-10))
 
 
 
-        # Forzare l'aggiornamento della pagina
+
         self.view.update_page()
 
 
 
-    def dettagliViaggio(self, destination, attraction, guide):
+    def dettagliViaggio(self, destination, attraction, guide, offerte, costo):
         citta = [x.name for x in destination]
         strCitta = ", ".join(map(str, citta))
         rowCitta = ft.Row(controls=[ft.Text("Città: ", weight=ft.FontWeight.BOLD), ft.Text(strCitta)])
@@ -230,7 +236,11 @@ class Controller:
                 listaAttraction.append(f"{a.name} -- Guida: {nomeGuida} -- Lingue parlate: {strLingue}")
         colAttrazioni = ft.Column(controls=[ft.Text(x) for x in listaAttraction])
         rowAttraction = ft.Row(controls=[colAttrazioni])
-        colonna = ft.Column(controls=[rowCitta, ft.Text("Attrazioni: ",  weight=ft.FontWeight.BOLD) , rowAttraction], height=500)
+        rowOfferta = ft.Row()
+        if offerte:
+            rowOfferta.controls.append(ft.Text(f"Con l'offerta \"{offerte[0].offer_name}\" paghi {offerte[0].cost}€ al posto di {costo}€ !!!", color='red', weight=ft.FontWeight.BOLD))
+
+        colonna = ft.Column(controls=[rowCitta, ft.Text("Attrazioni: ",  weight=ft.FontWeight.BOLD) , rowAttraction, rowOfferta], height=500)
         self.dlg = ft.AlertDialog(content=colonna, actions=[ft.TextButton("Chiudi", on_click=self.chiudi_dialog)])
         self.view.page.dialog = self.dlg
         self.dlg.open = True
