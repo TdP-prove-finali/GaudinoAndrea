@@ -102,9 +102,9 @@ class View:
             ft.DatePicker(first_date=datetime.datetime.today(),
                           on_change=self.riempiDataP)))
         rowData = ft.Row(controls=[btnData, self.textDataP], alignment=ft.MainAxisAlignment.CENTER)
-        self.ddCountry1 = ft.Dropdown(label='Scegli uno stato')
-        self.ddCountry2 = ft.Dropdown(label='Scegli uno stato')
-        self.ddCountry3 = ft.Dropdown(label='Scegli uno stato')
+        self.ddCountry1 = ft.Dropdown(label='Scegli uno stato', on_change=self.abilitaCountry2)
+        self.ddCountry2 = ft.Dropdown(label='Scegli uno stato', disabled=True, disabled_hint_content=ft.Text("Seleziona il primo stato!"), on_change=self.abilitaCountry3)
+        self.ddCountry3 = ft.Dropdown(label='Scegli uno stato', disabled=True, disabled_hint_content=ft.Text("Seleziona il primo stato!"))
         self.numeroAttrazioniMax = ft.TextField(label="Numero attrazioni")
         rowStati = ft.Row(controls=[self.ddCountry1, self.ddCountry2, self.ddCountry3], alignment=ft.MainAxisAlignment.CENTER)
         self.controller.fillDDStatiCrea()
@@ -116,7 +116,7 @@ class View:
         rowUltimeCose = ft.Row(controls=[self.numeroAttrazioniMax, self.ddLingue, self.ddCategoriaCostoCrea], alignment=ft.MainAxisAlignment.CENTER)
         rowInvia = ft.Row(controls=[ft.ElevatedButton(text='Crea viaggio', on_click=self.controller.creaViaggio)], alignment=ft.MainAxisAlignment.CENTER)
         self.colRisultati = ft.Column()
-        self.contentCrea.controls = [ft.Container(height=4), titleCrea,rowData, rowStati, rowUltimeCose, rowInvia, ft.Row(controls=[self.colRisultati], alignment=ft.MainAxisAlignment.CENTER)]
+        self.contentCrea.controls = [ft.Container(height=4), titleCrea,rowData, ft.Row([ft.Text("Scegli da 1 a 3 stati per il tuo viaggio")], alignment=ft.MainAxisAlignment.CENTER),  rowStati, rowUltimeCose, rowInvia, ft.Row(controls=[self.colRisultati], alignment=ft.MainAxisAlignment.CENTER)]
 
         return self.contentCrea
 
@@ -135,6 +135,18 @@ class View:
         self.controller.svuotaParametri(listaP)
         self.update_page()
 
+
+
+    def abilitaCountry2(self, e):
+        self.ddCountry2.disabled = False
+        self.ddCountry3.disabled_hint_content = ft.Text("Seleziona il secondo stato!")
+        self.update_page()
+
+
+
+    def abilitaCountry3(self, e):
+        self.ddCountry3.disabled = False
+        self.update_page()
 
 
     def set_controller(self, controller):
